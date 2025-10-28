@@ -1,0 +1,90 @@
+{
+  "name": "Mouse Battery",
+  "uuid": "com.hankun.mousebattery",
+  "version": "1.0.0",
+  "author": "Hankun",
+  "entry": "backend/plugin.cjs",
+  "description": "Display mouse battery percentage using an external Python helper script.",
+  "sdk": {
+    "version": "1.0.0"
+  },
+  "software": {
+    "minimumVersion": "1.0.0"
+  },
+  "os": [
+    {
+      "platform": "mac",
+      "minimumVersion": "10.15"
+    },
+    {
+      "platform": "windows",
+      "minimumVersion": "10"
+    }
+  ],
+  "device": [
+    {
+      "name": "flexbar",
+      "version": "1.0.0"
+    }
+  ],
+  "configPage": "global_config",
+  "shortcuts": [],
+  "keyLibrary": {
+    "title": "Mouse Battery",
+    "style": {
+      "icon": "mdi mdi-battery-high"
+    },
+    "children": [
+      {
+        "title": "$Battery.StatusTitle",
+        "tip": "$Battery.StatusTip",
+        "cid": "com.hankun.mousebattery.status",
+        "config": {
+          "keyType": "default",
+          "clickable": true,
+          "platform": [
+            "windows",
+            "mac"
+          ]
+        },
+        "style": {
+          "icon": "mdi mdi-battery-high",
+          "width": 240
+        },
+        "data": {}
+      }
+    ]
+  },
+  "local": {
+    "en": {
+      "Battery": {
+        "StatusTitle": "Mouse Battery",
+        "StatusTip": "Display the current mouse battery percentage.",
+        "UI": {
+          "PythonExecutable": "Python executable",
+          "ScriptPath": "Battery reader script path",
+          "HidPath": "HID device path (optional)",
+          "Vid": "USB vendor ID (optional)",
+          "Pid": "USB product ID (optional)",
+          "PollInterval": "Poll interval (seconds)",
+          "Timeout": "Command timeout (ms)"
+        }
+      }
+    },
+    "zh": {
+      "Battery": {
+        "StatusTitle": "鼠标电量",
+        "StatusTip": "显示当前鼠标电量百分比。",
+        "UI": {
+          "PythonExecutable": "Python 执行路径",
+          "ScriptPath": "电量脚本路径",
+          "HidPath": "HID 设备路径（可选）",
+          "Vid": "USB 厂商 ID（可选）",
+          "Pid": "USB 产品 ID（可选）",
+          "PollInterval": "轮询间隔（秒）",
+          "Timeout": "命令超时（毫秒）"
+        }
+      }
+    }
+  }
+}

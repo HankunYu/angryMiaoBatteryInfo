@@ -1,0 +1,9 @@
+{
+  "pythonExecutable": "python",
+  "scriptPath": "../../read_angrymiao_battery.py",
+  "hidPath": "",
+  "vid": "",
+  "pid": "",
+  "pollIntervalSeconds": 30,
+  "commandTimeoutMs": 5000
+}

@@ -2,5 +2,7 @@
   "name": "plugin-backend",
   "version": "1.0.0",
   "private": true,
-  "dependencies": {}
+  "dependencies": {
+    "node-hid": "^2.1.2"
+  }
 }

@@ -20,26 +20,6 @@
                 <v-row>
                     <v-col cols="12" md="6">
                         <v-text-field
-                            v-model="localConfig.pythonExecutable"
-                            label="Python executable"
-                            placeholder="python"
-                            hide-details="auto"
-                            variant="outlined"
-                        />
-                    </v-col>
-                    <v-col cols="12" md="6">
-                        <v-text-field
-                            v-model="localConfig.scriptPath"
-                            label="Battery reader script path"
-                            placeholder="../../read_angrymiao_battery.py"
-                            hide-details="auto"
-                            variant="outlined"
-                        />
-                    </v-col>
-                </v-row>
-                <v-row>
-                    <v-col cols="12" md="6">
-                        <v-text-field
                             v-model="localConfig.hidPath"
                             label="HID device path (optional)"
                             placeholder="\\?\HID#VID_3151&PID_5007..."
@@ -79,10 +59,22 @@
                     </v-col>
                     <v-col cols="12" md="6">
                         <v-text-field
-                            v-model.number="localConfig.commandTimeoutMs"
-                            label="Command timeout (ms)"
+                            v-model.number="localConfig.initDelayMs"
+                            label="Delay after init (ms)"
                             type="number"
-                            min="500"
+                            min="0"
+                            hide-details="auto"
+                            variant="outlined"
+                        />
+                    </v-col>
+                </v-row>
+                <v-row>
+                    <v-col cols="12" md="6">
+                        <v-text-field
+                            v-model.number="localConfig.retryCount"
+                            label="Retry attempts"
+                            type="number"
+                            min="1"
                             hide-details="auto"
                             variant="outlined"
                         />
@@ -106,13 +98,12 @@
 
 <script>
 const DEFAULT_CONFIG = {
-    pythonExecutable: "python",
-    scriptPath: "../../read_angrymiao_battery.py",
     hidPath: "",
     vid: "",
     pid: "",
     pollIntervalSeconds: 30,
-    commandTimeoutMs: 5000
+    initDelayMs: 50,
+    retryCount: 3
 };
 
 export default {
@@ -168,15 +159,15 @@ export default {
         },
         normalizeConfig(config) {
             const poll = Number(config.pollIntervalSeconds);
-            const timeout = Number(config.commandTimeoutMs);
+            const initDelay = Number(config.initDelayMs);
+            const retryCount = Number(config.retryCount);
             return {
-                pythonExecutable: (config.pythonExecutable || "").trim() || DEFAULT_CONFIG.pythonExecutable,
-                scriptPath: (config.scriptPath || "").trim() || DEFAULT_CONFIG.scriptPath,
                 hidPath: (config.hidPath || "").trim(),
                 vid: (config.vid ?? "").toString().trim(),
                 pid: (config.pid ?? "").toString().trim(),
                 pollIntervalSeconds: Number.isFinite(poll) && poll > 0 ? poll : DEFAULT_CONFIG.pollIntervalSeconds,
-                commandTimeoutMs: Number.isFinite(timeout) && timeout > 0 ? timeout : DEFAULT_CONFIG.commandTimeoutMs
+                initDelayMs: Number.isFinite(initDelay) && initDelay >= 0 ? initDelay : DEFAULT_CONFIG.initDelayMs,
+                retryCount: Number.isFinite(retryCount) && retryCount >= 1 ? Math.floor(retryCount) : DEFAULT_CONFIG.retryCount
             };
         }
     }

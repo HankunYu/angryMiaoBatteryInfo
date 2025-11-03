@@ -1,25 +1,16 @@
 const { plugin, logger } = require("@eniac/flexdesigner");
-const path = require("path");
-const { execFile } = require("child_process");
+const { readBatteryPercentage } = require("./hidReader");
 
 const BATTERY_CID = "com.hankun.mousebattery.status";
-const DEFAULT_SCRIPT_PATH = path.resolve(
-    __dirname,
-    "..",
-    "..",
-    "read_angrymiao_battery.py"
-);
 const DEFAULT_CONFIG = {
-    pythonExecutable: process.platform === "win32" ? "python" : "python3",
-    scriptPath: DEFAULT_SCRIPT_PATH,
     hidPath: "",
     vid: "",
     pid: "",
     pollIntervalSeconds: 30,
-    commandTimeoutMs: 5000
+    initDelayMs: 50,
+    retryCount: 3
 };
 const MIN_POLL_INTERVAL_MS = 5000;
-const MIN_TIMEOUT_MS = 1000;
 const CONFIG_RETRY_BASE_DELAY_MS = 1000;
 const CONFIG_RETRY_MAX_DELAY_MS = 10000;
 
@@ -41,12 +32,6 @@ function buildConfig(raw) {
         return merged;
     }
 
-    if (typeof raw.pythonExecutable === "string" && raw.pythonExecutable.trim()) {
-        merged.pythonExecutable = raw.pythonExecutable.trim();
-    }
-    if (typeof raw.scriptPath === "string" && raw.scriptPath.trim()) {
-        merged.scriptPath = resolveScriptPath(raw.scriptPath.trim());
-    }
     if (typeof raw.hidPath === "string") {
         merged.hidPath = raw.hidPath.trim();
     }
@@ -56,15 +41,22 @@ function buildConfig(raw) {
     if (typeof raw.pid === "string" || typeof raw.pid === "number") {
         merged.pid = String(raw.pid).trim();
     }
+    if (typeof raw.initDelayMs === "string" || typeof raw.initDelayMs === "number") {
+        const parsedDelay = Number(raw.initDelayMs);
+        if (!Number.isNaN(parsedDelay) && parsedDelay >= 0) {
+            merged.initDelayMs = parsedDelay;
+        }
+    }
+    if (typeof raw.retryCount === "string" || typeof raw.retryCount === "number") {
+        const parsedRetry = Number(raw.retryCount);
+        if (!Number.isNaN(parsedRetry) && parsedRetry >= 1) {
+            merged.retryCount = Math.floor(parsedRetry);
+        }
+    }
 
     const pollValue = Number(raw.pollIntervalSeconds);
     if (!Number.isNaN(pollValue) && pollValue > 0) {
         merged.pollIntervalSeconds = pollValue;
-    }
-
-    const timeoutValue = Number(raw.commandTimeoutMs);
-    if (!Number.isNaN(timeoutValue) && timeoutValue > 0) {
-        merged.commandTimeoutMs = timeoutValue;
     }
 
     return merged;
@@ -99,22 +91,11 @@ function makeKeyId(serialNumber, uid) {
     return `${serialNumber}:${uid}`;
 }
 
-function resolveScriptPath(value) {
-    if (path.isAbsolute(value)) {
-        return value;
-    }
-    return path.resolve(__dirname, value);
-}
-
 function getPollIntervalMs(config) {
     return Math.max(
         MIN_POLL_INTERVAL_MS,
         Math.round(config.pollIntervalSeconds * 1000)
     );
-}
-
-function getCommandTimeoutMs(config) {
-    return Math.max(MIN_TIMEOUT_MS, Math.round(config.commandTimeoutMs));
 }
 
 function isTransportNotReadyError(error) {
@@ -268,59 +249,7 @@ function stopPolling() {
 }
 
 function readBatteryOnce() {
-    return new Promise((resolve, reject) => {
-        const pythonExecutable = pluginConfig.pythonExecutable || DEFAULT_CONFIG.pythonExecutable;
-        const scriptPath = resolveScriptPath(pluginConfig.scriptPath);
-        const args = [scriptPath];
-        const hidPath = pluginConfig.hidPath;
-        const vid = pluginConfig.vid;
-        const pid = pluginConfig.pid;
-
-        if (hidPath) {
-            args.push("--path", hidPath);
-        } else if (vid && pid) {
-            args.push("--vid", vid, "--pid", pid);
-        }
-
-        args.push("--quiet");
-
-        const child = execFile(
-            pythonExecutable,
-            args,
-            {
-                timeout: getCommandTimeoutMs(pluginConfig),
-                windowsHide: true
-            },
-            (error, stdout, stderr) => {
-                if (error) {
-                    const message =
-                        error.code === "ENOENT"
-                            ? `Executable not found: ${pythonExecutable}`
-                            : error.killed
-                            ? "Command timed out"
-                            : error.message || "Command failed";
-                    reject(new Error(message));
-                    return;
-                }
-
-                const trimmedStdout = stdout.trim();
-                const parsedValue = Number.parseInt(trimmedStdout, 10);
-                if (Number.isNaN(parsedValue)) {
-                    const errMsg = stderr.trim()
-                        ? `${trimmedStdout} (${stderr.trim()})`
-                        : trimmedStdout || "No data received";
-                    reject(new Error(`Unexpected output: ${errMsg}`));
-                    return;
-                }
-                const clamped = Math.max(0, Math.min(100, parsedValue));
-                resolve(clamped);
-            }
-        );
-
-        child.on("error", (err) => {
-            reject(err);
-        });
-    });
+    return readBatteryPercentage(pluginConfig);
 }
 
 plugin.on("plugin.config.updated", (payload) => {

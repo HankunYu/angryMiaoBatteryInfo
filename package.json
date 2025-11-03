@@ -23,6 +23,7 @@
     "rollup": "^4.0.2"
   },
   "dependencies": {
-    "@eniac/flexdesigner": "^1.0.5"
+    "@eniac/flexdesigner": "^1.0.5",
+    "node-hid": "^2.1.2"
   }
 }

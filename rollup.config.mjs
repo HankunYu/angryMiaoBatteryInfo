@@ -56,7 +56,9 @@ const config = {
 						"name": "plugin-backend",
 						"version": "1.0.0",
 						"private": true,
-						"dependencies": {}
+						"dependencies": {
+							"node-hid": "^2.1.2"
+						}
 					};
 					
 					// Ensure target directory exists
@@ -72,7 +74,7 @@ const config = {
 	],
 	external: [
 		// Exclude all native modules and node built-in modules
-		'fs', 'path', 'os', 'util',
+		'fs', 'path', 'os', 'util', 'node-hid',
 		/^node:/
 	]
 };
